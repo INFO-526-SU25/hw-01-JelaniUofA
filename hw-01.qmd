@@ -1,11 +1,20 @@
 ---
-title: "HW 01"
-author: "INSERT YOUR NAME HERE"
-format: 
-  html:
-    embed-resources: true
-toc: true
+
+  title: "HW 01"
+  author: "Jelani Butler"
+  format: 
+    html:
+      embed-resources: true
+  execute: 
+    warning: false
+    message: false
+    error: false
+  toc: true
+  editor: 
+    markdown: 
+      wrap: 72
 ---
+
 
 ## 0 - Setup
 
@@ -14,9 +23,31 @@ if (!require("pacman"))
   install.packages("pacman")
 
 # use this line for installing/loading
-# pacman::p_load() 
+pacman::p_load(tidyverse,accidents,nyc_marathon,county)
+pacman::p_load()
 
 devtools::install_github("tidyverse/dsbox")
+
+ggplot2::theme_set(ggplot2::theme_minimal(base_size = 14))
+
+options(width = 65)
+
+
+knitr::opts_chunk$set(
+  fig.width = 7,        # 7" width
+  fig.asp = 0.618,      # the golden ratio
+  fig.retina = 3,       # dpi multiplier for displaying HTML output on retina
+  fig.align = "center", # center align figures
+  dpi = 300             # higher dpi, sharper image
+)
+pacman::p_load(here)
+pacman::p_load(dplyr)
+pacman::p_load(lubridate)
+pacman::p_load(openintro)
+pacman::p_load(scales)
+pacman::p_load(glue)
+
+
 ```
 
 ## 1 - Road traffic accidents in Edinburgh
@@ -25,14 +56,517 @@ devtools::install_github("tidyverse/dsbox")
 
 ```
 
+#I wanted to see the data set before I got started accidents \<-
+read_csv(here("accidents.csv")) glimpse(accidents)
+
+#now create the weekend dummy variables for the weekend and weekday
+
+accidents \<- accidents\|\> mutate( Type_day_cat = case_when(
+day_of_week %in% c("Monday", "Tuesday", "Wednesday", "Thursday",
+"Friday") \~ "Weekday", day_of_week %in% c("Saturday", "Sunday") \~
+"Weekend",
+
+```         
+)
+```
+
+)
+
+#I want to look at the new variable
+
+glimpse(accidents)
+
+```         
+now I have to extract the hour from the time coloumn section.
+```
+
+time \<- hms::as_hms(accidents$time)
+accidents <- accidents|>
+  mutate(
+      hour = hour(hms::as_hms(accidents$time)))
+
+glimpse(accidents)
+
+```         
+ok time to create the new graph. looking at the output it is clear that we need to use the geom_density I'm not too sure if you wanted the exact colors as the ones in the picture.
+```
+
+ggplot(accidents, aes(x = time, fill = severity, color = severity)) +
+geom_density(alpha = 0.6, position = "identity") +
+scale_fill_manual(values = c("Fatal" = "Purple", "Serious" =
+"lightblue", "Slight" = "Yellow")) + scale_color_manual(values =
+c("Fatal" = "Purple", "Serious" = "lightblue", "Slight" = "Yellow")) +
+facet_wrap(\~ Type_day_cat, ncol = 1) + labs( title = "Number of
+accidents throughout the day", subtitle = "By day of week and severity",
+x = "Time of Day", y = "Density" )
+
+```         
+ interpretation: there seems to be alot of slight and serious accidents around 6 pm on the weekday (which makes sense because that's around the time of rush hour.) 
+ 
+ what's even more interesting is that the fatal accidents seem to be more prevalent during the early mornings.
+ 
+ the weekend seems to have similar affects for slight and serious accidents but there seems to be very few fatal accidents on the weekends.
+```
+
 ## 2 - NYC marathon winners
 
 ```{r label-me-2}
 
 ```
 
+data\<- read_csv(here("nyc_marathon.csv"))
+
+glimpse(nyc_marathon)
+
+sum(is.na(nyc_marathon))
+
+```         
+A.)
+I can tell that I'm going to have to supress the warnings so I'll do that now while I make the charts
+```
+
+ggplot(nyc_marathon, aes(x = time)) + geom_histogram(bins = 30, fill =
+"skyblue", color = "black") + labs(title = "The Winning Times of
+Marathon Runners", x = "Time", y = "Number")
+
+ggplot(nyc_marathon, aes(y = time_hrs)) + geom_boxplot(fill =
+"lightblue") + labs(title = "Box Plot of The Winning Times of Marathon
+Runners", y = "Hours")
+
+```         
+B.)
+
+You can see more of athe frequency of runner's time in the histogram chart. You also see the distribution of the runner's winning times in the histogram chart.  
+
+YOu can see the quartiles and the winning times for each runner in the box plot. You can also see the outliers and how far they are away from the 25th, 50th, and 75th percentile of winning runner's times.
+```
+
+ggplot(nyc_marathon, aes(x= division, y = time_hrs, fill=division)) +
+geom_boxplot()+ scale_fill_manual(values = c("Men"= "Blue",
+"Women"="Pink")) labs(title = "Box Plot of The Winning Times of Marathon
+Runners", y = "Hours")
+
+```         
+Based on the box plots it seems that the winning men overall had faster winning times than the women. There are less outliers for the men (7) than the women (8) for the slower runners.    
+```
+
+```         
+C.)
+
+it is clear that the legend here is not needed. So I will remove it. this will improve the data to ink ratio becuse it will have more data ink and less non-data ink.     
+```
+
+ggplot(nyc_marathon, aes(x= division, y = time_hrs, fill=division)) +
+geom_boxplot(show.legend = FALSE)+ scale_fill_manual(values = c("Men"=
+"Blue", "Women"="Pink")) labs(title = "Box Plot of The Winning Times of
+Marathon Runners", y = "Hours")
+
+```         
+D.)
+I have to make a point plot to make sure that i have the times and years in the chart. I have to change the color from women from pink to red so you will be able to clearly see the observations. what's visible in this plot that's different from the other plots is the exact times and the sepeficic years of the men and women's winning times. You are not able to see this in the other charts in the previous questions.     
+```
+
+suppressWarnings(nyc_marathon) ggplot(nyc_marathon) + geom_point(aes(x=
+year, y=time, color =division))+ scale_color_manual(values = c("Men"=
+"Blue", "Women"="Red"))+ labs(title = "The Winning Times of Marathon
+Runners","x= year", y = "time")
+
 ## 3 - US counties
+
+```         
+A.)
+
+Looking at the code, it is clear that you are trying to add layers to the code and for some reason the second layer that you have is another chart with different variables which won't work. SO no it does not make sense and the code will NOT work.   
+```
+
+```         
+B.)
+
+It is easier to compare poverty leverls across people from the first table in my opinion. The biggest advantage is that in this case, seeing the chart horizontally, allows you to see the trends within the dataset. The big point is that you have to be careful on how you place your variables because it can hinder, misinform, or, make it difficult to provide meaningful
+observations. It is also important to know where "~" is placed when using the facet_grid feature.  
+  
+```
+
+```         
+C.)
+```
+
+library(openintro) data(county) glimpse(county)
+
+#Plot A ggplot(county,(aes(x = homeownership, y = poverty))) +
+geom_point() labs( title = "Plot A" )
+
+#plot B ggplot(county,(aes(x = homeownership, y = poverty))) +
+geom_point()+ geom_smooth(method = "loess", se = FALSE)+ labs( title =
+"Plot B" )
+
+#Plot C ggplot(county,(aes(x = homeownership, y = poverty))) +
+geom_point()+ geom_smooth(aes(color=metro),method = "loess", se = FALSE,
+show.legend = FALSE)+ labs( title = "Plot C" )
+
+# plot D
+
+ggplot(county, aes(x = homeownership, y = poverty)) +
+geom_smooth(aes(color = metro), method = "loess", se = FALSE,show.legend
+= FALSE)+ geom_point()+ labs( title = "Plot D" )
+
+# plot E
+
+ggplot(county, aes(x = homeownership, y = poverty)) +
+geom_point(aes(color = metro)) + geom_smooth(aes(color = metro, linetype
+= metro), method = "loess", se = FALSE) + scale_color_manual(values =
+c("yes" = "blue", "no" = "black", "NA" = "gray")) +
+scale_linetype_manual(values = c("yes" = "dotted", "no" = "solid", "NA"
+= "solid")) + labs( title = "Plot E" )
+
+# Plot F
+
+ggplot(county, aes(x = homeownership, y = poverty, color= metro)) +
+geom_point() + geom_smooth(aes(color = metro, linetype = metro), method
+= "loess", se = FALSE) + scale_linetype_manual(values = c("yes" =
+"dotted", "no" = "solid", "NA" = "solid")) + labs( title = "Plot F" )
+
+# Plot G
+
+ggplot(county,(aes(x = homeownership, y = poverty, color = metro))) +
+geom_point()+ geom_smooth(method = "loess", se = FALSE, color= "blue")+
+labs( title = "Plot G" )
+
+# Plot H
+
+ggplot(county, aes(x = homeownership, y = poverty, color=metro)) +
+geom_point(aes(color = metro)) + labs( title = "Plot H" )
 
 ## 4 - Rental apartments in SF
 
-## 5 - Napoleon’s march.
+```         
+A.)
+
+Based on the code below you see a relationship between credit card balance, income and marital/student status. 
+
+There is a strong relationship between income and credit card balance in general. 
+
+The more income you have, the more you will be allowed to borrow by an lending compnay. 
+
+This relationship can vary depending on the martial status and whether or not the borrower is in school. 
+
+Normally, if someone chooses to attend school, they are traditionally foregoing current income with the potential to recieve more income in the future with the new degree.
+
+Also it is traditionally assumed that if you have a spouse in todat's modern society, it's assumed that both members of the relationship are working, also called a 2 income household. 
+
+Therefore, furthering the notion that if you are married, you  will have both members of the household working, which increases the income, therefore increases the income and credit limit. 
+
+If you are a traditional student (full time, usually no employment status) you will have less income, therefore a lower credit limit. 
+```
+
+credit \<- read_csv(here("credit.csv"))
+
+credit \<- credit \|\> mutate( color_group = ifelse(student == "No",
+"Top", "Bottom"), shape_group = ifelse(student == "No", "circle",
+"triangle") )
+
+glimpse(credit)
+
+Label_Groups \<- labeller( student = c("No" = "Student: No", "Yes" =
+"Student: Yes"), married = c("No" = "Married: No", "Yes" = "Married:
+Yes") )
+
+ggplot(credit, aes(x = income, y = balance, color = color_group, shape =
+shape_group)) + geom_smooth(method = "lm", se = FALSE, color =
+"black") + geom_point()+ facet_grid(student \~ married, labeller =
+Label_Groups) + scale_color_manual(values = c("Top" = "blue", "Bottom" =
+"red")) + scale_shape_manual(values = c("circle" = 16, "triangle" =
+17)) + scale_x_continuous(labels = label_dollar(scale = 1, suffix =
+"K")) + scale_y_continuous(labels = label_dollar()) + labs( x =
+"Income", y = "Credit card balance" )+ theme(legend.position = "none")
+
+```         
+B.) As explained in part A. both married and student are useful predictors in addition to income for predicting credit card balance.
+
+As stated before, if you are married, the notion is in today's society both members of the household are working. Therefore, there will be more income and a higher credit limit.
+
+On the other hand, if there are traditional students, they are most likely not in the labor force currently. therefore, less income, and a lower credit balance. 
+
+If you don't agree with the standars assumptions, then one can believe that it might not be useful predictors. For example, students might not work, but their accounts might be tied to wealthy parents, therefore breaking the assumptions stated in part A. 
+
+Or if a married household is only a single working household, where one of the significant others are for example dealing with the upbrinigng of children. The assumption also breaks. 
+```
+
+```         
+C.) 
+code wise, it's the same thing but you have to create some new code for the new var, credit utilization. 
+
+Then you change the format of the credit balance to be a percent and not a dollar value. 
+```
+
+credit \<- credit \|\> mutate( credit_utilization = balance / limit,
+color_group = ifelse(student == "No", "Top", "Bottom"), shape_group =
+ifelse(student == "No", "circle", "triangle") )
+
+glimpse(credit)
+
+SM \<- labeller( student = c("No" = "Student: No", "Yes" = "Student:
+Yes"), married = c("No" = "Married: No", "Yes" = "Married: Yes") )
+
+ggplot(credit, aes(x = income, y = credit_utilization, color =
+color_group, shape = shape_group)) + geom_smooth(method = "lm", se =
+FALSE, color = "black") + geom_point()+ facet_grid(student \~ married,
+labeller = SM) + scale_color_manual(values = c("Top" = "blue", "Bottom"
+= "red")) + scale_shape_manual(values = c("circle" = 16, "triangle" =
+17)) + scale_x_continuous(labels = label_dollar(scale = 1, suffix =
+"K")) + scale_y_continuous(labels = label_percent(accuracy = 1, suffix =
+"%")) + labs( x = "Income", y = "Credit card utilization" )+
+theme(legend.position = "none")
+
+```         
+D.) 
+Based on what we have in part C there's not alot of differnece, it mainly comes down to the amount of income that you have. the more income you have, the less you will need to use your credit. Therfore the lower the credit utilization. Based on this data, marital status nor being a student had much of an effect on the relationship between income and credit blaance. 
+```
+
+## 5 - Napoleon’s march (American Edition).
+
+```         
+OK so I am taking the code from Andrew Heiss's "Exploring Minard’s 1812 plot with ggplot2".
+
+Just a quick background on the data. It records the famous Napoleon's 1812 retreat from Russia. let's look at the data and change a couple of things and also 
+```
+
+data \<- read_rds("napoleon.rds") install.packages("weathermetrics")
+install.packages("ggmap") install.packages("ggrepel")
+install.packages("gridExtra") install.packages("pander") \## the package
+that will help me "Americanize" this Non-American nonsense!
+library(weathermetrics) glimpse(data)
+
+```         
+Ok Now I'm going to copy what he did and explain it in my own words.
+
+We are first going to upload all the libraries that are necessary for us to begin the process of creating Napoleon's 1812 retreat from Russia. we are going to also upload 3 texts that are comma seperated values (csv), and are converted into tables. 
+
+the strings as factors is set to fales which means the string values will not be converted into factors "dummy variables"
+
+```
+
+library(tidyverse) library(lubridate) library(ggmap) library(ggrepel)
+library(gridExtra) library(pander)
+
+cities \<- read.table("cities.txt", header = TRUE, stringsAsFactors =
+FALSE)
+
+troops \<- read.table("troops.txt", header = TRUE, stringsAsFactors =
+FALSE)
+
+temps \<- read.table("temps.txt", header = TRUE, stringsAsFactors =
+FALSE) %\>% mutate(date = dmy(date)) \# Convert string to actual date
+
+glimpse(temps)
+
+```         
+I read his documentation and realized that the temperature was given in celsius. It broke my AMERICAN heart. 
+
+So I decided to do what ANY good AMERICAN would do. I changed the temperature into fahrenheit.
+```
+
+temps\<- temps %\>% mutate(temp_usa = convert_temperature(temp,
+old_metric = "celsius", new_metric = "fahrenheit"))
+
+glimpse(temps)
+
+```         
+Now that I made the MOST IMPORTANT change this side of data visualization HISTORY. I can continue to explain his code. The next part of the code creates a table to give us some information on how the troops faired during this battle
+```
+
+library(pander)
+
+troops %\>% head() %\>% pandoc.table()
+
+```         
+now we are going to create a path graph using the geom_path() feature. we'll have the x axis be the longitude and the y axis be the latitude.
+```
+
+ggplot(troops, aes(x = long, y = lat, group = group)) + geom_path()
+
+```         
+Now split it up based on whether or not they advanced or retreated "A or R"
+```
+
+ggplot(troops, aes(x = long, y = lat, group = group, color = direction,
+size = survivors)) + geom_path()
+
+```         
+Now to help the chart visually havethe lines connect make the lines wider
+```
+
+ggplot(troops, aes(x = long, y = lat, group = group, color = direction,
+size = survivors)) + geom_path(lineend = "round")
+
+```         
+Now then ext code makes sure you see how many people died by making the size of each Attach and retreat line be reflective of how the war went. the bigger the size the more people were alive.
+```
+
+ggplot(troops, aes(x = long, y = lat, group = group, color = direction,
+size = survivors)) + geom_path(lineend = "round") + scale_size(range =
+c(0.5, 15))
+
+```         
+Now let's make the graph the same color as the historic text. also remove labels
+```
+
+ggplot(troops, aes(x = long, y = lat, group = group, color = direction,
+size = survivors)) + geom_path(lineend = "round") + scale_size(range =
+c(0.5, 15)) + scale_colour_manual(values = c("#DFC17E", "#252523")) +
+labs(x = NULL, y = NULL) + guides(color = FALSE, size = FALSE)
+
+```         
+We take advantage of the fact that longatitude + latitude = a location on a map now we can plot cities of each battle
+```
+
+ggplot() + geom_path(data = troops, aes(x = long, y = lat, group =
+group, color = direction, size = survivors), lineend = "round") +
+geom_point(data = cities, aes(x = long, y = lat)) + geom_text(data =
+cities, aes(x = long, y = lat, label = city), vjust = 1.5) +
+scale_size(range = c(0.5, 15)) + scale_colour_manual(values =
+c("#DFC17E", "#252523")) + labs(x = NULL, y = NULL) + guides(color =
+FALSE, size = FALSE)
+
+```         
+He also used geom_text_repel to make sure that the points do not overlap. He also changed the color of each point so it will be easier to see. It also allows for a realistic look of the march path of war. 
+```
+
+ggplot() + geom_path(data = troops, aes(x = long, y = lat, group =
+group, color = direction, size = survivors), lineend = "round") +
+geom_point(data = cities, aes(x = long, y = lat), color = "#DC5B44") +
+geom_text_repel(data = cities, aes(x = long, y = lat, label = city),
+color = "#DC5B44", family = "Open Sans Condensed Bold") +
+scale_size(range = c(0.5, 15)) + scale_colour_manual(values =
+c("#DFC17E", "#252523")) + labs(x = NULL, y = NULL) + guides(color =
+FALSE, size = FALSE)
+
+```         
+He used the stamen project so we can get realistic google images of the location of the march. Sadly, there has been ALOT  of changes with the API of the Stamen project, so I wasn't able to get his part of the code to work. Overall this part of the code is optional in relation to the final product.
+
+also the process of the code does not work anymore without an API key so I am not able to complete the rest of the code. 
+```
+
+march.1812.europe \<- c(left = -13.10, bottom = 35.75, right = 41.04,
+top = 61.86)
+
+march.1812.europe.map \<- get_stadiamap(bbox = march.1812.europe, zoom =
+5, maptype = "stamen_terrain", where = "cache")
+
+march.1812.plot \<- ggmap(march.1812.ne.europe.map) + geom_path(data =
+troops, aes(x = long, y = lat, group = group, color = direction, size =
+survivors), lineend = "round") + geom_point(data = cities, aes(x = long,
+y = lat), color = "#DC5B44") + geom_text_repel(data = cities, aes(x =
+long, y = lat, label = city), color = "#DC5B44", family = "Open Sans
+Condensed Bold") + scale_size(range = c(0.5, 10)) +
+scale_colour_manual(values = c("#DFC17E", "#252523")) + guides(color =
+FALSE, size = FALSE) + theme_nothing()
+
+march.1812.plot
+
+```         
+Regarding the final part of the project, we have to make a line graph of the temps to show how cold it was during the retreat of the battle. But with my AMERICAN twist. we will be using the GOD BLESSED fahrenheit system 
+```
+
+ggplot(data = temps, aes(x = long, y = temp_usa)) + geom_line() +
+geom_text(aes(label = temp_usa), vjust = 1.5)
+
+```         
+The next part of the task is the clean up pahse of the labeling for the line graphs. it will show you both the date and the weather in the GLORIOUS us temperature system.
+```
+
+temps.nice \<- temps %\>% mutate(nice.label = paste0(temp, "°, ", month,
+". ", day))
+
+temps.1812.plot \<- ggplot(data = temps.nice, aes(x = long, y =
+temp_usa)) + geom_line() + geom_label(aes(label = nice.label), family =
+"Open Sans Condensed Bold", size = 2.5) + labs(x = NULL, y = "°
+fahrenheit") + scale_x_continuous(limits =
+ggplot_build(march.1812.plot)$layout$panel_ranges\[\[1\]\]\$x.range) +
+scale_y_continuous(position = "right") + coord_cartesian(ylim = c(-35,
+5)) + \# Add some space above/below theme_bw(base_family = "Open Sans
+Condensed Light") + theme(panel.grid.major.x = element_blank(),
+panel.grid.minor.x = element_blank(), panel.grid.minor.y =
+element_blank(), axis.text.x = element_blank(), axis.ticks =
+element_blank(), panel.border = element_blank())
+
+temps.1812.plot
+
+```         
+We have 2 plots. one for the troops and one for the days and weather. Both of them have the same x and y axis. 
+
+therefore, we can now combine both plots aand make sure they align by using the rbind feature.
+
+again, due to the api issue, i am not allowed to show march.1812.plot but this is the code that would show it. 
+```
+
+both.1812.plot \<- rbind(ggplotGrob(march.1812.plot),
+ggplotGrob(temps.1812.plot))
+
+grid::grid.newpage() grid::grid.draw(both.1812.plot)
+
+```         
+at this point we need to make sure that the map is bigger so now we adjust the panel height of the combined plot 
+```
+
+both.1812.plot\$heights\[panels\] \<- unit(c(map.panel.height, 0.1),
+"null")
+
+grid::grid.newpage() grid::grid.draw(both.1812.plot)
+
+```         
+he also created a code without the background witch skips the API part of the code. I will change it to add my AMERICAN flavor to the code.
+```
+
+march.1812.plot.simple \<- ggplot() + geom_path(data = troops, aes(x =
+long, y = lat, group = group, color = direction, size = survivors),
+lineend = "round") + geom_point(data = cities, aes(x = long, y = lat),
+color = "#DC5B44") + geom_text_repel(data = cities, aes(x = long, y =
+lat, label = city), color = "#DC5B44", family = "Open Sans Condensed
+Bold") + scale_size(range = c(0.5, 10)) + scale_colour_manual(values =
+c("#DFC17E", "#252523")) + guides(color = FALSE, size = FALSE) +
+theme_nothing()
+
+# Change the x-axis limits to match the simple map
+
+temps.1812.plot \<- ggplot(data = temps.nice, aes(x = long, y =
+temp_usa)) + geom_line() + geom_label(aes(label = nice.label), family =
+"Open Sans Condensed Bold", size = 2.5) + labs(x = NULL, y = "°
+fahrenheit") + scale_x_continuous(limits =
+ggplot_build(march.1812.plot.simple)$layout$panel_ranges\[\[1\]\]\$x.range) +
+scale_y_continuous(position = "right") + coord_cartesian(ylim = c(-35,
+5)) + \# Add some space above/below theme_bw(base_family = "Open Sans
+Condensed Light") + theme(panel.grid.major.x = element_blank(),
+panel.grid.minor.x = element_blank(), panel.grid.minor.y =
+element_blank(), axis.text.x = element_blank(), axis.ticks =
+element_blank(), panel.border = element_blank())
+
+# Combine the two plots
+
+both.1812.plot.simple \<- rbind(ggplotGrob(march.1812.plot.simple),
+ggplotGrob(temps.1812.plot))
+
+# Adjust panels
+
+panels \<- both.1812.plot.simple$layout$t\[grep("panel",
+both.1812.plot.simple$layout$name)\]
+
+# Because this plot doesn't use coord_equal, since it's not a map, we can use
+
+# whatever relative numbers we want, like a 3:1 ratio
+
+both.1812.plot.simple\$heights\[panels\] \<- unit(c(3, 1), "null")
+
+grid::grid.newpage() grid::grid.draw(both.1812.plot.simple)
+
+```         
+Works cited - I used these along with your notes and lectures to finish the HW
+
+jeffreyohene. “How to Extract Hour from Datetime Column in R.” Stack Overflow, 20 Dec. 2023, https://stackoverflow.com/questions/77692894/how-to-extract-hour-from-datetime-column-in-r. Accessed 30 May 2025.
+
+Islands. “Multiple Plots on 1 Page in R.” Stack Overflow, 16 May 2014, https://stackoverflow.com/questions/23692026/multiple-plots-on-1-page-in-r. Accessed 30 May 2025.
+
+sieste. “How to Suppress Warnings Globally in an R Script.” Stack Overflow, 24 Apr. 2013, https://stackoverflow.com/questions/16194212/how-to-suppress-warnings-globally-in-an-r-script. Accessed 30 May 2025.
+
+“R Programming Cheat Sheet.” Dataquest, https://www.dataquest.io/cheat-sheet/r-programming-cheat-sheet/. Accessed 30 May 2025.
+```
